@@ -1,131 +1,151 @@
-# 🔥 Stoke — 免费 A 股数据层
+# 🔥 Stoke Data — A 股纯数据层
 
 <p align="center">
   <b>零 API Key · 零注册 · 零付费 · 开箱即用</b>
 </p>
 
 <p align="center">
-  <a href="https://github.com/birdilsss-byte/stoke"><img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python"></a>
-  <a href="https://github.com/birdilsss-byte/stoke/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="https://github.com/birdilsss-byte/stoke/releases"><img src="https://img.shields.io/badge/version-1.3.0-brightgreen.svg" alt="Version"></a>
+  <a href="https://github.com/birdilsss-byte/stoke-data"><img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python"></a>
+  <a href="https://github.com/birdilsss-byte/stoke-data/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+  <a href="https://github.com/birdilsss-byte/stoke-data/releases"><img src="https://img.shields.io/badge/version-2.0.0-brightgreen.svg" alt="Version"></a>
   <img src="https://img.shields.io/badge/API%20Key-不需要-orange.svg" alt="No API Key">
 </p>
 
 ---
 
-## 为什么要做这个？
+12 个数据源，覆盖 A 股行情、K 线、研报、新闻、公告、涨停、板块、估值，零 API Key。
 
-市面上几乎所有 A 股数据方案都需要你去注册、付费、拿 API Key：
-- Tushare 要积分、要付费
-- Wind/Choice 动辄上万
-- 免费 API 三天两头改接口
-
-**Stoke 不一样。** 它直接基于通达信 TCP 协议和公开财经数据，**不用注册、不用付费、不用 API Key**。你装上就能用。
-
-## 能做什么？
-
-| 层面 | 数据 | 来源 |
-|------|------|------|
-| 📈 行情 | 实时行情（5 档盘口）、历史 K 线、PE/PB 估值 | 通达信 TCP + 腾讯直连 + 乐咕乐股 |
-| 📊 基础数据 | F10 财务快照 | 通达信 |
-| 📰 新闻 | 个股新闻、财联社电报（分钟级） | 东财 + 财联社 |
-| 📋 研报 | 机构研报（含 PDF 下载 + 盈利预测） | 东财 |
-| 🚀 信号 | **涨停板 + 强势涨停题材归因** + 概念/行业板块 | 同花顺 |
-| 📑 公告 | 巨潮资讯网公告 | 巨潮 |
-
-**40+ 个接口，6 大层面，6 源备份，覆盖量化投研的核心数据需求。**
+**纯数据获取层，不含任何策略/时机/执行逻辑。**
 
 ## 3 秒开始
 
 ```bash
 # 1. 安装 uv（如果还没有）
-#    macOS: brew install uv
-#    Windows: winget install astral.uv
-#    或官方脚本: https://docs.astral.sh/uv/getting-started/installation/
+brew install uv
 
 # 2. 克隆
-git clone https://github.com/birdilsss-byte/stoke.git && cd stoke
+git clone https://github.com/birdilsss-byte/stoke-data.git && cd stoke-data
 
-# 3. 安装依赖（需要 Python 3.11+）
+# 3. 安装依赖
 uv sync
 
 # 4. 查实时行情
 uv run python3 -c "
 from stoke import Stoke
 s = Stoke()
-df = s.realtime(['000001', '600000', '000858'])
-print(df[['code', 'price', 'high', 'low', 'vol']].to_string())
+df = s.realtime(['000001', '600519'])
+print(df[['code', 'price', 'high', 'low']].to_string())
 "
 ```
 
-**不需要 API Key。不需要注册。不需要付费。**
+## 用法
 
-## 作为 Skill 使用（Claude Code · OpenClaw · Hermes）
+```python
+from stoke import Stoke  # 默认带缓存
 
-Stoke 遵循 `agentskills.io` 开放标准，可在 **27+** 个 AI Agent 平台中直接安装：
+s = Stoke()
 
-```bash
-# 先安装 uv（如果还没有）：brew install uv 或 winget install astral.uv
-# 然后：
-git clone https://github.com/birdilsss-byte/stoke.git ~/stoke
-cd ~/stoke && uv sync
+# === 数据获取 ===
+df = s.kline("000001")                          # 日K线
+df = s.realtime(["000001", "600519"])           # 实时行情
+df = s.tencent_brief(["sh000001", "hk00700"])   # 跨市场
+df = s.minute_kline("sh600519", "m30", 240)     # 分钟K线
+df = s.fqkline("sh600519", "day", "hfq")        # 复权K线
+df = s.intraday_line("sh600519")                # 当日分时线
+
+# === 信号数据（列名统一）===
+df = s.limit_up()                               # 涨停板
+df = s.strong_stocks()                          # 强势涨停
+df = s.sector_rank()                            # 行业涨跌幅排名
+df = s.hot_keywords()                           # 热搜概念
+df = s.northbound_flow()                        # 北向资金
+
+# === 研报/新闻/公告 ===
+df = s.research("000001")                       # 机构研报
+df = s.news("000001")                           # 个股新闻
+df = s.announcements_detailed("000001")         # 公告列表
+df = s.download_report_pdf("infoCode")          # 下载研报PDF
+
+# === 估值 ===
+df = s.index_pe("上证50")                       # 指数 PE
+df = s.market_pb()                              # 全市场 PB
+df = s.eps_forecast("600519")                   # 一致预期 EPS
+df = s.kline_with_valuation("sh.600000")        # K线+估值字段
+
+# === 板块 ===
+df = s.concepts()                               # 概念板块
+df = s.industries()                             # 行业板块
+df = s.sector_members("沪深300")                # 板块成分股
+df = s.stock_industry()                         # 全市场行业分类
+
+# === 龙虎榜 ===
+df = s.dragon_tiger()                           # 龙虎榜
+df = s.billboard_seat_detail("000001", "2026-01-01", "2026-06-26")
+df = s.full_market_billboard("2026-06-26")
+
+# === 检查数据来源 ===
+print(df.attrs)  # → {"method": "limit_up", "fallback": False}
+
+# === 多源备份版 ===
+from stoke.fallback import FallbackStoke
+fs = FallbackStoke()
+df = fs.kline("000001")  # mootdx → efinance → baostock → 腾讯
 ```
 
-安装后设置环境变量 `STOKE_HOME` 指向克隆目录。然后在 Claude Code、OpenClaw 或 Hermes 中直接说 **"看看今天的涨停板"** 或 **"查一下平安银行行情"**，Skill 自动触发。
+## 特性
 
-`SKILL.md` 同时兼容 **Claude Code** · **OpenClaw** · **Hermes**，一套文件，三平台通用。
+| 特性 | 说明 |
+|------|------|
+| **全局限流** | 多 Agent 同时调用同一源，自动协调间隔，不封 IP |
+| **列名归一化** | 同方法不管走主源/备用源，返回一致列名 |
+| **降级透明** | `df.attrs` 标记 method + fallback 信息，调用方可感知 |
+| **SQLite 缓存** | 分级 TTL，缓存命中 <10ms，故障自动回退旧缓存 |
+| **多源备份** | 核心方法 2-4 级 fallback 链，东财崩了走同花顺 |
 
-## 项目结构
+## 12 数据源
 
-```
-stoke/
-├── stoke/                        # Python 包
-│   ├── __init__.py               # 导出 Stoke 统一入口
-│   ├── client.py                 # Stoke 门面类（自动路由数据源）
-│   ├── config.py                 # 配置
-│   ├── rate_limiter.py           # 限流器（带随机抖动+日志）
-│   ├── utils.py                  # 自动重试装饰器
-│   └── sources/                  # 6 源适配
-│       ├── mootdx_source.py          # 通达信：K线、实时行情、股票列表
-│       ├── akshare_source.py         # 新闻、电报、研报、公告、涨停、概念
-│       ├── legulegu_source.py        # PE / PB 估值（纯 requests）
-│       ├── tencent_direct_source.py  # 腾讯直连：实时行情 + K 线
-│       ├── baostock_source.py        # 复权K线 + 财报 + 估值字段
-│       └── efinance_source.py        # 极速K线 + 龙虎榜 + 资金流 + 股东
-├── tests/                        # 测试
-├── SKILL.md                      # Claude Code Skill 定义
-└── pyproject.toml                # uv 依赖管理
-```
-
-## 设计原则
-
-- **限流是铁律** — 每个数据源内置限流器，遵守平台调用间隔，不被封 IP
-- **保持简单** — 不做缓存、不过度抽象、三个 Source 各自独立
-- **health_check() 必实现** — 每个 Source 都能 1 秒验证连通性
-- **返回 DataFrame** — 直接对接 pandas 生态
+| 数据源 | 协议 | 限流 | 覆盖 |
+|--------|------|:----:|------|
+| mootdx | TCP 通达信 | 不限 | K线、实时行情、指数、板块成分股、F10 |
+| akshare | HTTP 东财/同花顺 | 5s | 新闻、研报、涨停、情绪、资金流、行业 |
+| baostock | HTTP 证券宝 | 1s | 复权K线、行业分类、股票列表、财报 |
+| efinance | HTTP 新浪/网易/东财 | 0.5s | 极速K线、龙虎榜、十大股东、资金流 |
+| legulegu | HTTP 乐咕乐股 | 1s | PE/PB 估值 |
+| tencent_direct | HTTP 腾讯 qt.gtimg.cn | 0.3s | 实时行情、K线、分钟K线、复权、跨市场 |
+| eastmoney | HTTP 东财 reportapi | 1.5s | 个股研报、行业研报、PDF 下载 |
+| ths | HTTP 同花顺 10jqka | 1s | 机构一致预期 EPS |
+| datacenter | HTTP 东财 datacenter | 1.5s | 龙虎榜席位明细、全市场龙虎榜 |
+| cninfo | HTTP 东财公告 | 1s | 沪深北公告列表 |
+| push2 | HTTP 东财 push2 | 1s | 行业板块排名、概念板块排名（akshare 降级备用） |
+| ths_hot | HTTP 同花顺热点 | 0.5s | 强势股+题材归因、涨停板近似（akshare 降级备用） |
 
 ## 限流规则
 
 | 数据源 | 间隔 | 说明 |
-|--------|------|------|
-| 通达信 (mootdx) | 不限流 | 原生 TCP 协议，本地解析 |
-| 东财系 (akshare) | **5 秒** | 必须遵守，否则封 IP |
-| 腾讯财经 | 3 秒 | 较为宽松 |
+|--------|:----:|------|
+| mootdx | 不限 | TCP 协议 |
+| akshare | **5 秒** | 最严格 |
+| tencent_direct | 0.3 秒 | 腾讯直连 |
+| 其余 9 源 | 0.5-1.5 秒 | 内置自动 |
 
-## 谁适合用？
+## 降级链
 
-- 🤖 **量化开发者** — 免费的数据管道，接上就能用
-- 🧠 **AI Agent 开发者** — 作为工具层接入你的 AI 应用
-- 📊 **个人投资者** — 在终端里快速查数据，不依赖任何付费工具
-- 🎓 **学习研究** — 了解 A 股数据获取的技术方案
+```
+limit_up()        → akshare ─┬→ ths_hot
+strong_stocks()   → akshare ─┬→ ths_hot
+sector_rank()     → akshare ─┬→ push2
+northbound_flow() → akshare ─┬→ ths_hot
+hot_keywords()    → akshare ─┬→ push2
+kline()           → mootdx ──┬→ efinance ──┬→ baostock ──┬→ 腾讯
+realtime()        → mootdx ──┬→ 腾讯 ──────┬→ 新浪 ──────┬→ efinance
+```
 
 ## 许可证
 
-MIT — 拿去用，随便改，随便商用。
+MIT
 
 ---
 
 <p align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/birdilsss-byte">birdilsss-byte</a> · 
-  Powered by <a href="https://github.com/mootdx/mootdx">mootdx</a> + <a href="https://github.com/akfamily/akshare">akshare</a></sub>
+  <sub>Built with ❤️ by <a href="https://github.com/birdilsss-byte">birdilsss-byte</a></sub>
 </p>

@@ -1,17 +1,5 @@
 # Stoke Data — A 股纯数据层
 
-## 🔴 绝对红线
-
-**这个项目只做一件事：获取 A 股数据并返回。**
-- ❌ 不做策略（没有发现层）
-- ❌ 不做时机判断（没有 timing）
-- ❌ 不做交易执行（没有 execute/runner）
-- ❌ 不做持仓管理
-- ❌ 不做复盘/经验沉淀
-- ✅ **只做：12 源 → 路由 → 缓存 → 限流 → 归一化 → 返回 DataFrame**
-
-任何往这个项目里加策略/扫描/交易逻辑的行为，都是越界。策略逻辑应该写在调用方的项目里（如 `stock-avenger`）。
-
 ---
 
 ## 定位
@@ -25,7 +13,7 @@
 
 ---
 
-## 数据源（12 源）
+## 数据源（12 源）（不断增加中）
 
 | 数据源 | 协议 | 限流 | 覆盖 |
 |--------|------|:----:|------|
@@ -81,41 +69,13 @@ stock-data/
 ## 核心特性
 
 ### 全局限流
-多 Agent/多模块同时调用同一数据源时，跨实例共享限流状态，自动协调间隔，避免 IP 封禁。
-
-```python
-# Agent A 和 Agent B 同时调 akshare，限流器自动协调，不会 5 秒内发两次
-```
+多 Agent/多模块同时调用同一数据源时，跨实例共享限流状态，限流器自动协调间隔，避免 IP 封禁。
 
 ### 列名归一化
 同一方法不管走主源还是降级备用源，返回一致的列名。
 
-```python
-df = s.limit_up()
-# 列名统一：symbol, name, change_pct, board_days, reason, industry
-# 不论数据来自 akshare 还是 ths_hot，列名一样
-```
-
 ### 降级透明
 `df.attrs` 携带数据来源信息，调用方可自主判断是否可信。
-
-```python
-df = s.limit_up()
-df.attrs["method"]    # → "limit_up"
-df.attrs["fallback"]  # → True/False（是否走了备用源）
-```
-
-### 降级链
-
-```
-limit_up()        → akshare ─┬→ ths_hot
-strong_stocks()   → akshare ─┬→ ths_hot
-sector_rank()     → akshare ─┬→ push2
-northbound_flow() → akshare ─┬→ ths_hot
-hot_keywords()    → akshare ─┬→ push2
-kline()           → mootdx ──┬→ efinance ──┬→ baostock ──┬→ 腾讯直连
-realtime()        → mootdx ──┬→ 腾讯直连 ──┬→ 新浪直连 ──┬→ efinance
-```
 
 ---
 
