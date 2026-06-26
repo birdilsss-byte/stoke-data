@@ -1,15 +1,16 @@
 # Stoke Data — A 股纯数据层
 
+工作目录: `~/Documents/stock-data/` — 操作前先 cd 到这里。
+依赖安装完，无需重复 `uv sync`。调数据前无需设 STOKE_HOME。
+
 ---
 
 ## 定位
 
-`stoke-data` 是一个独立的 A 股数据获取库，可被 Claude Code Agent、Python 脚本、或其他项目作为依赖调用。
+纯数据获取库。可被 Claude Code Agent、Python 脚本或其他项目调用。
 
-- 独立仓库：`birdilsss-byte/stoke-data`
-- 本地路径：`~/Documents/stock-data/`
-- 包名：`stoke-data` v2.0.0
-- 许可证：MIT
+- 仓库：`birdilsss-byte/stoke-data`
+- 包名：`stoke-data` v2.0.0 | MIT
 
 ---
 
@@ -83,47 +84,23 @@ stock-data/
 
 ```python
 from stoke import Stoke  # 默认带缓存
-
 s = Stoke()
+df = s.limit_up()                    # 涨停板（列名归一化: symbol/name/change_pct）
+print(df.attrs)                      # → {"method": "limit_up", "fallback": False}
 
-# === 数据获取 ===
-df = s.kline("000001")                  # 日K线
-df = s.realtime(["000001", "600519"])   # 实时行情
-df = s.tencent_brief(["sh000001", "hk00700"])  # 跨市场
-df = s.minute_kline("sh600519", "m30", 240)     # 分钟K线
-
-# === 信号数据（列名统一）===
-df = s.limit_up()          # 涨停板
-df = s.strong_stocks()     # 强势涨停
-df = s.sector_rank()       # 行业涨跌幅排名
-df = s.hot_keywords()      # 热搜概念
-df = s.northbound_flow()   # 北向资金
-
-# === 研报/新闻/公告 ===
-df = s.research("000001")       # 机构研报
-df = s.news("000001")           # 个股新闻
-df = s.announcements_detailed("000001")  # 公告列表
-
-# === 估值 ===
-df = s.index_pe("上证50")       # 指数 PE
-df = s.market_pb()              # 全市场 PB
-df = s.eps_forecast("600519")   # 一致预期 EPS
-
-# === 板块 ===
-df = s.concepts()               # 概念板块
-df = s.industries()             # 行业板块
-df = s.sector_members("沪深300")  # 板块成分股
-df = s.stock_industry()          # 全市场行业分类
-
-# === 检查数据来源 ===
-print(df.attrs)  # → {"method": "limit_up", "fallback": False}
-
-from stoke.fallback import FallbackStoke  # 多源备份版
+from stoke.fallback import FallbackStoke
 fs = FallbackStoke()
-df = fs.kline("000001")  # mootdx → efinance → baostock → 腾讯
+df = fs.kline("000001")              # mootdx→efinance→baostock→腾讯
 ```
 
+完整 API 列表看 `stoke/client.py` 每个方法或 README.md。
+
 ---
+
+## 当前状态
+
+✅ 稳定 — 12 源 + 缓存 + 全局限流 + 列名归一化 + 降级链。日常可用。
+⬜ 下一步：更多数据源、更细粒度降级链覆盖（当前 5 条，部分 akshare 方法无备用）
 
 ## 编码规范
 
@@ -138,6 +115,3 @@ df = fs.kline("000001")  # mootdx → efinance → baostock → 腾讯
 - **绝对禁止**明文暴露 API Token/密码/Key
 - 密钥从环境变量或配置文件读取，不得内联
 
-## Git
-
-独立仓库：`git@github.com:birdilsss-byte/stoke-data.git`
