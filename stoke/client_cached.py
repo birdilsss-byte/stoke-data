@@ -52,11 +52,14 @@ class StokeCached:
             logger.info("降级超时已过，重试缓存 %s", table)
             self._degraded_at = 0.0
         try:
-            return self.store.get_or_fetch(
+            df = self.store.get_or_fetch(
                 table, key, fetcher,
                 max_age_sec=max_age_sec, mode=mode,
                 key_column=key_column, column_map=column_map,
             )
+            if not df.empty:
+                df.attrs.setdefault("method", table)
+            return df
         except Exception:
             logger.exception("缓存故障，降级直连 %s", table)
             self._degraded_at = time.time()
