@@ -33,40 +33,6 @@
 
 ---
 
-## 项目结构
-
-```
-stock-data/
-├── stoke/
-│   ├── __init__.py           # 导出 Stoke + FallbackStoke + 异常类
-│   ├── client.py             # 12 源统一路由 + 列名归一化
-│   ├── client_cached.py      # SQLite 缓存包装
-│   ├── store.py              # 缓存存储（16 表，分级 TTL）
-│   ├── fallback.py           # FallbackStoke 多源自动备份
-│   ├── config.py             # 限流配置 + RateLimiter（全局共享）
-│   ├── calendar.py           # A 股交易日历
-│   ├── utils.py              # 指数退避重试
-│   └── sources/              # 12 数据源适配器
-│       ├── mootdx_source.py
-│       ├── akshare_source.py
-│       ├── baostock_source.py
-│       ├── efinance_source.py
-│       ├── legulegu_source.py
-│       ├── tencent_direct_source.py
-│       ├── eastmoney_source.py
-│       ├── ths_source.py
-│       ├── datacenter_source.py
-│       ├── cninfo_source.py
-│       ├── push2_source.py       # ★ 东财 push2（akshare 降级）
-│       └── ths_hot_source.py     # ★ 同花顺热点（akshare 降级）
-├── tests/
-├── pyproject.toml
-├── CLAUDE.md
-└── SKILL.md
-```
-
----
-
 ## 核心特性
 
 ### 全局限流
@@ -79,21 +45,6 @@ stock-data/
 `df.attrs` 携带数据来源信息，调用方可自主判断是否可信。
 
 ---
-
-## 用法
-
-```python
-from stoke import Stoke  # 默认带缓存
-s = Stoke()
-df = s.limit_up()                    # 涨停板（列名归一化: symbol/name/change_pct）
-print(df.attrs)                      # → {"method": "limit_up", "fallback": False}
-
-from stoke.fallback import FallbackStoke
-fs = FallbackStoke()
-df = fs.kline("000001")              # mootdx→efinance→baostock→腾讯
-```
-
-完整 API 列表看 `stoke/client.py` 每个方法或 README.md。
 
 ---
 
