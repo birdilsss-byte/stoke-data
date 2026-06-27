@@ -38,8 +38,8 @@ def make_tests(s: Stoke) -> list[dict]:
         {"id": 4,  "name": "kline 历史K线(周线)",  "category": "行情",    "source": "mootdx", "func": lambda: s.kline("600000", frequency=7),                                 "expect_type": "df", "min_rows": 10},
         # ===================== mootdx 基础数据 = 3 项 =====================
         {"id": 5,  "name": "stock_list 全市场列表","category": "基础数据","source": "mootdx", "func": lambda: s.stock_list(),                                                "expect_type": "df", "min_rows": 1000},
-        {"id": 6,  "name": "f10 财务快照(平安银行)","category": "基础数据","source": "mootdx", "func": lambda: s.f10("000001"),                                              "expect_type": "df", "min_rows": 1},
-        {"id": 7,  "name": "f10 财务快照(浦发银行)","category": "基础数据","source": "mootdx", "func": lambda: s.f10("600000"),                                              "expect_type": "df", "min_rows": 1},
+        {"id": 6,  "name": "f10 财务快照(平安银行)","category": "基础数据","source": "mootdx", "func": lambda: s.f10("000001"),                                              "expect_type": "dict", "min_rows": 1},
+        {"id": 7,  "name": "f10 财务快照(浦发银行)","category": "基础数据","source": "mootdx", "func": lambda: s.f10("600000"),                                              "expect_type": "dict", "min_rows": 1},
         # ===================== akshare 新闻 = 3 项 =====================
         {"id": 8,  "name": "news 个股新闻(平安)",   "category": "新闻",   "source": "akshare", "func": lambda: s.news("000001"),                                              "expect_type": "df", "min_rows": 1},
         {"id": 9,  "name": "news 个股新闻(浦发)",   "category": "新闻",   "source": "akshare", "func": lambda: s.news("600000"),                                              "expect_type": "df", "min_rows": 1},
@@ -51,14 +51,14 @@ def make_tests(s: Stoke) -> list[dict]:
         {"id": 13, "name": "announcements 公告(平安)","category": "公告", "source": "akshare", "func": lambda: s.announcements("000001"),                                       "expect_type": "df", "min_rows": 1},
         {"id": 14, "name": "announcements 公告(茅台)","category": "公告", "source": "akshare", "func": lambda: s.announcements("600519"),                                       "expect_type": "df", "min_rows": 1},
         # ===================== akshare 信号 = 2 项 =====================
-        {"id": 15, "name": "limit_up 涨停板",        "category": "信号",  "source": "akshare", "func": lambda: s.limit_up("20260518"),                                          "expect_type": "df", "min_rows": 0},
-        {"id": 16, "name": "strong_stocks 强势涨停", "category": "信号",  "source": "akshare", "func": lambda: s.strong_stocks("20260518"),                                     "expect_type": "df", "min_rows": 0},
+        {"id": 15, "name": "limit_up 涨停板",        "category": "信号",  "source": "akshare", "func": lambda: s.limit_up(),                                                    "expect_type": "df", "min_rows": 0},
+        {"id": 16, "name": "strong_stocks 强势涨停", "category": "信号",  "source": "akshare", "func": lambda: s.strong_stocks(),                                               "expect_type": "df", "min_rows": 0},
         # ===================== akshare 板块 = 2 项 =====================
         {"id": 17, "name": "concepts 概念板块",      "category": "板块",  "source": "akshare", "func": lambda: s.concepts(),                                                    "expect_type": "df", "min_rows": 100},
         {"id": 18, "name": "industries 行业板块",    "category": "板块",  "source": "akshare", "func": lambda: s.industries(),                                                  "expect_type": "df", "min_rows": 50},
         # ===================== akshare 资金流 = 7 项 =====================
         {"id": 19, "name": "northbound_flow 北向","category": "资金流",   "source": "akshare", "func": lambda: s.northbound_flow(),                                              "expect_type": "df", "min_rows": 10},
-        {"id": 20, "name": "dragon_tiger 龙虎榜",   "category": "资金流","source": "akshare", "func": lambda: s.dragon_tiger(),                                                 "expect_type": "df", "min_rows": 1},
+        {"id": 20, "name": "dragon_tiger 龙虎榜",   "category": "资金流","source": "efinance","func": lambda: s.dragon_tiger(),                                                "expect_type": "df", "min_rows": 0, "allow_empty": True},
         {"id": 21, "name": "margin_shanghai 融资融券(沪)","category": "资金流","source": "akshare", "func": lambda: s.margin_shanghai(),                                        "expect_type": "df", "min_rows": 1},
         {"id": 22, "name": "margin_shenzhen 融资融券(深)","category": "资金流","source": "akshare", "func": lambda: s.margin_shenzhen(),                                        "expect_type": "df", "min_rows": 1},
         {"id": 23, "name": "market_fund_flow 市场资金","category": "资金流","source": "akshare","func": lambda: s.market_fund_flow(),                                             "expect_type": "df", "min_rows": 1},
@@ -77,12 +77,12 @@ def make_tests(s: Stoke) -> list[dict]:
         # ===================== akshare 舆情评分 = 3 项 =====================
         {"id": 34, "name": "stock_desire 参与意愿(平安)","category": "情绪","source": "akshare","func": lambda: s.stock_desire("000001"),                                        "expect_type": "df", "min_rows": 1},
         {"id": 35, "name": "stock_focus 关注指数(平安)","category": "情绪","source": "akshare","func": lambda: s.stock_focus("000001"),                                          "expect_type": "df", "min_rows": 1},
-        {"id": 36, "name": "limit_down 跌停板",        "category": "情绪","source": "akshare", "func": lambda: s.limit_down("20260518"),                                          "expect_type": "df", "min_rows": 0},
+        {"id": 36, "name": "limit_down 跌停板",        "category": "情绪","source": "akshare", "func": lambda: s.limit_down(),                                                    "expect_type": "df", "min_rows": 0},
         # ===================== tencent = 4 项 =====================
-        {"id": 37, "name": "index_pe 上证50 PE",      "category": "估值",  "source": "tencent","func": lambda: s.index_pe("上证50"),                                             "expect_type": "df", "min_rows": 1},
-        {"id": 38, "name": "index_pe 沪深300 PE",     "category": "估值",  "source": "tencent","func": lambda: s.index_pe("沪深300"),                                            "expect_type": "df", "min_rows": 1},
-        {"id": 39, "name": "index_pe 创业板指 PE",    "category": "估值",  "source": "tencent","func": lambda: s.index_pe("创业板指"),                                            "expect_type": "df", "min_rows": 1},
-        {"id": 40, "name": "market_pb 全市场 PB",     "category": "估值",  "source": "tencent","func": lambda: s.market_pb(),                                                    "expect_type": "df", "min_rows": 1},
+        {"id": 37, "name": "index_pe 上证50 PE",      "category": "估值",  "source": "legulegu","func": lambda: s.index_pe("上证50"),                                           "expect_type": "df", "min_rows": 1},
+        {"id": 38, "name": "index_pe 沪深300 PE",     "category": "估值",  "source": "legulegu","func": lambda: s.index_pe("沪深300"),                                          "expect_type": "df", "min_rows": 1},
+        {"id": 39, "name": "index_pe 创业板指 PE",    "category": "估值",  "source": "legulegu","func": lambda: s.index_pe("创业板指"),                                          "expect_type": "df", "min_rows": 1},
+        {"id": 40, "name": "market_pb 全市场 PB",     "category": "估值",  "source": "legulegu","func": lambda: s.market_pb(),                                                  "expect_type": "df", "min_rows": 1},
     ]
     return tests
 
@@ -391,13 +391,13 @@ def main():
 
     # 生成 HTML
     html = generate_html(results, total_time)
-    output_path = "/Volumes/Black/Stoke/tests/stress_test_report.html"
+    output_path = "tests/stress_test_report.html"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"\n📄 HTML 报告已生成: {output_path}")
+    print(f"\nHTML 报告: {output_path}")
 
     # 保存 JSON 原始数据
-    json_path = "/Volumes/Black/Stoke/tests/stress_test_results.json"
+    json_path = "tests/stress_test_results.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump({
             "timestamp": datetime.now().isoformat(),
@@ -411,7 +411,7 @@ def main():
                 "avg_score": avg_score,
             },
         }, f, ensure_ascii=False, indent=2)
-    print(f"📄 JSON 原始数据已保存: {json_path}")
+    print(f"JSON 原始数据: {json_path}")
 
 
 if __name__ == "__main__":

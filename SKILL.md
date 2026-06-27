@@ -135,3 +135,13 @@ export STOKE_HOME=~/Documents/stock-data
 ```
 
 当前安装位置：`~/Documents/stock-data/`，这是 Stoke 主仓库的 worktree（分支 `experiment/stock-data`），只含数据层，不含策略/时机/执行逻辑。
+
+## 测试与调试
+
+```bash
+uv run python3 tests/smoke_test.py        # 冒烟测试（30+ 方法，检查列名和 attrs）
+uv run python3 tests/debug_info.py        # 查看版本、配置、缓存状态
+uv run python3 tests/debug_info.py --health  # 含全源连通性
+uv run python3 scripts/verify_install.py  # 验证安装和依赖
+uv run python3 tests/stress_test.py       # 40 项全接口压力测试（生成 HTML 报告）
+```

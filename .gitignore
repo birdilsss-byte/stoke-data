@@ -31,3 +31,6 @@ exported_image.png
 *.zip
 tests/*.html
 tests/*.json
+
+# Backups
+stoke_backup_*/
