@@ -10,7 +10,7 @@
 纯数据获取库。可被 Claude Code Agent、Python 脚本或其他项目调用。
 
 - 仓库：`birdilsss-byte/stoke-data`
-- 包名：`stoke-data` v2.0.0 | MIT
+- 包名：`stoke-data` v2.1.0 | MIT
 
 ---
 

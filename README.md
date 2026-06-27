@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/birdilsss-byte/stoke-data"><img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python"></a>
   <a href="https://github.com/birdilsss-byte/stoke-data/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="https://github.com/birdilsss-byte/stoke-data/releases"><img src="https://img.shields.io/badge/version-2.0.0-brightgreen.svg" alt="Version"></a>
+  <a href="https://github.com/birdilsss-byte/stoke-data/releases"><img src="https://img.shields.io/badge/version-2.1.0-brightgreen.svg" alt="Version"></a>
   <img src="https://img.shields.io/badge/API%20Key-不需要-orange.svg" alt="No API Key">
 </p>
 
