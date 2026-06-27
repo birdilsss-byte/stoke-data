@@ -85,7 +85,7 @@ except Exception as e:
 
 try:
     t0 = time.time()
-    df_dt_ef = s.daily_billboard()
+    df_dt_ef = s.efinance.get_daily_billboard()
     print(f"  efinance 龙虎榜: {time.time()-t0:.3f}s/{len(df_dt_ef)}条")
 except Exception as e:
     print(f"  efinance 龙虎榜: FAIL: {e}")

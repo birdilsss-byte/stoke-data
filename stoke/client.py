@@ -101,6 +101,8 @@ class Stoke:
             ths_limiter: 同花顺一致预期限流器（默认 1 秒）
             datacenter_limiter: 东财数据中心限流器（默认 1.5 秒）
             cninfo_limiter: 巨潮公告限流器（默认 1 秒）
+            push2_limiter: 东财 push2 直连限流器（默认 1 秒）
+            ths_hot_limiter: 同花顺热点直连限流器（默认 0.5 秒）
 
         需要缓存？用 StokeCached： from stoke.client_cached import StokeCached
         """
@@ -226,33 +228,37 @@ class Stoke:
         rename = {k: v for k, v in mapping.items() if k in df.columns}
         if rename:
             df = df.rename(columns=rename)
-        # 附加元数据: df.attrs["source"] 可被消费者读取
         df.attrs["method"] = method
+        return df
+
+    def _call_fallback(self, method: str, primary, backup) -> pd.DataFrame:
+        """主源失败自动降级 + 列名归一化 + fallback 标记，消除重复 try/except 模式"""
+        fb = False
+        try:
+            df = self._safe_call(method, primary)
+        except Exception:
+            fb = True
+            df = self._safe_call(f"{method}.fb", backup)
+        df = self._normalize(df, method)
+        if not df.empty:
+            df.attrs["fallback"] = fb
         return df
 
     def limit_up(self, date: Optional[str] = None) -> pd.DataFrame:
         """涨停板股票池 (akshare → ths_hot 降级)"""
-        fb = False
-        try:
-            df = self._safe_call("limit_up", self.akshare.get_limit_up_pool, date)
-        except Exception:
-            fb = True
-            df = self._safe_call("limit_up.ths", self.ths_hot.get_limit_up_pool, date)
-        df = self._normalize(df, "limit_up")
-        if not df.empty: df.attrs["fallback"] = fb
-        return df
+        return self._call_fallback(
+            "limit_up",
+            lambda: self.akshare.get_limit_up_pool(date),
+            lambda: self.ths_hot.get_limit_up_pool(date),
+        )
 
     def strong_stocks(self, date: Optional[str] = None) -> pd.DataFrame:
         """强势涨停股 (akshare → ths_hot 降级)"""
-        fb = False
-        try:
-            df = self._safe_call("strong_stocks", self.akshare.get_strong_stocks, date)
-        except Exception:
-            fb = True
-            df = self._safe_call("strong_stocks.ths", self.ths_hot.get_strong_stocks, date)
-        df = self._normalize(df, "strong_stocks")
-        if not df.empty: df.attrs["fallback"] = fb
-        return df
+        return self._call_fallback(
+            "strong_stocks",
+            lambda: self.akshare.get_strong_stocks(date),
+            lambda: self.ths_hot.get_strong_stocks(date),
+        )
 
     # ==================== 估值（legulegu） ====================
 
@@ -298,15 +304,11 @@ class Stoke:
 
     def sector_rank(self) -> pd.DataFrame:
         """行业板块涨跌幅排名 (akshare → push2 降级)"""
-        fb = False
-        try:
-            df = self._safe_call("sector_rank", self.akshare.get_sector_rank)
-        except Exception:
-            fb = True
-            df = self._safe_call("sector_rank.push2", self.push2.get_sector_rank)
-        df = self._normalize(df, "sector_rank")
-        if not df.empty: df.attrs["fallback"] = fb
-        return df
+        return self._call_fallback(
+            "sector_rank",
+            lambda: self.akshare.get_sector_rank(),
+            lambda: self.push2.get_sector_rank(),
+        )
 
     # ==================== 市场宽度（akshare） ====================
 
@@ -322,15 +324,11 @@ class Stoke:
 
     def northbound_flow(self) -> pd.DataFrame:
         """北向资金每日净买额 (akshare → ths_hot 降级)"""
-        fb = False
-        try:
-            df = self._safe_call("northbound_flow", self.akshare.get_northbound_flow)
-        except Exception:
-            fb = True
-            df = self._safe_call("northbound_flow.ths", self.ths_hot.get_northbound_flow)
-        df = self._normalize(df, "northbound_flow")
-        if not df.empty: df.attrs["fallback"] = fb
-        return df
+        return self._call_fallback(
+            "northbound_flow",
+            lambda: self.akshare.get_northbound_flow(),
+            lambda: self.ths_hot.get_northbound_flow(),
+        )
 
     def dragon_tiger(self) -> pd.DataFrame:
         """龙虎榜营业部资金统计"""
@@ -368,16 +366,11 @@ class Stoke:
 
     def hot_keywords(self) -> pd.DataFrame:
         """热搜关键词 (akshare → push2 降级)"""
-        fb = False
-        try:
-            df = self.akshare.get_hot_keywords()
-        except Exception:
-            fb = True
-            df = self._safe_call("hot_keywords.push2", self.push2.get_concept_rank)
-        df = self._normalize(df, "hot_keywords")
-        if not df.empty: df.attrs["fallback"] = fb
-        return df
-
+        return self._call_fallback(
+            "hot_keywords",
+            lambda: self.akshare.get_hot_keywords(),
+            lambda: self.push2.get_concept_rank(),
+        )
     # ==================== 情绪：雪球热度（备选） ====================
 
     def xueqiu_hot(self, mode: str = "最热门") -> pd.DataFrame:
@@ -431,6 +424,31 @@ class Stoke:
     def stock_industry(self) -> pd.DataFrame:
         """全市场股票行业分类（证监会标准）"""
         return self._safe_call("stock_industry", self.baostock.get_stock_industry)
+
+    def industry_tree(self) -> dict:
+        """
+        获取行业分类树：{行业名称: [股票代码列表]}
+
+        基于 baostock 的证监会行业分类分组，返回纯 6 位代码列表。
+        可直接传入 sector_rank_realtime() 用于自建行业涨跌排名。
+        """
+        return self._safe_call("industry_tree", self.baostock.get_industry_tree)
+
+    def sector_rank_realtime(self, industry_map: dict) -> pd.DataFrame:
+        """
+        自建行业涨跌排名（纯腾讯直连，不依赖东财/同花顺）
+
+        使用 industry_tree() 生成的行业分类字典 + 腾讯实时行情
+        计算每个行业的平均涨跌幅、上涨/下跌家数。
+
+        Args:
+            industry_map: {行业名称: [股票代码列表]}，由 industry_tree() 生成
+
+        Returns:
+            DataFrame，按涨跌幅降序，含 sector_name / avg_change_pct / up_count / down_count
+        """
+        return self._safe_call("sector_rank_realtime",
+                               self.tencent_direct.get_sector_rank, industry_map)
 
     def all_stock(self, day: str = "") -> pd.DataFrame:
         """全市场股票列表（含退市/摘牌），day 默认最近交易日"""
@@ -487,10 +505,6 @@ class Stoke:
             end_date: YYYYMMDD，默认今天
         """
         return self.efinance.get_kline(symbol, start_date, end_date)
-
-    def daily_billboard(self) -> pd.DataFrame:
-        """今日龙虎榜 — 同 dragon_tiger()，保留别名兼容"""
-        return self.dragon_tiger()
 
     def top10_holders(self, symbol: str) -> pd.DataFrame:
         """十大股东（efinance 独有）"""

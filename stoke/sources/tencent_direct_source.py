@@ -345,6 +345,95 @@ class TencentDirectSource:
         logger.info("腾讯直连分钟 K 线: %s 共 %d 条", symbol, len(rows))
         return pd.DataFrame(rows) if rows else pd.DataFrame()
 
+    # ==================== 行业排名（自建，代理无关） ====================
+
+    @retry_on_failure()
+    def get_sector_rank(self, industry_map: dict) -> pd.DataFrame:
+        """
+        自建行业涨跌排名（纯腾讯直连，不依赖东财/同花顺）
+
+        基于行业分类字典（由 baostock.get_industry_tree() 生成），
+        用腾讯实时行情计算每个行业的平均涨跌幅、上涨/下跌家数等指标。
+
+        Args:
+            industry_map: {行业名称: [股票代码列表]}
+
+        Returns:
+            DataFrame，按涨跌幅降序排列
+        """
+        if not industry_map:
+            logger.warning("腾讯行业排名: industry_map 为空")
+            return pd.DataFrame()
+
+        # 收集所有股票代码，建立 symbol → sector 映射
+        all_symbols = []
+        sector_index = {}
+        for sector, symbols in industry_map.items():
+            for sym in symbols:
+                sym = str(sym).zfill(6)
+                all_symbols.append(sym)
+                sector_index.setdefault(sym, []).append(sector)
+
+        all_symbols = list(set(all_symbols))
+        logger.info("腾讯行业排名: %d 个行业, %d 只股票", len(industry_map), len(all_symbols))
+
+        # 分批查询腾讯实时行情
+        batch_size = 200
+        all_quotes = []
+        for i in range(0, len(all_symbols), batch_size):
+            batch = all_symbols[i:i + batch_size]
+            self.limiter.wait()
+            codes = []
+            for s in batch:
+                prefix = "sh" if s.startswith(("6", "9")) else "sz"
+                codes.append(f"{prefix}{s}")
+            url = f"http://qt.gtimg.cn/q={','.join(codes)}"
+            try:
+                r = self._session.get(url, timeout=10)
+                r.encoding = "gbk"
+                batch_df = self._parse_realtime_response(r.text)
+                if not batch_df.empty:
+                    all_quotes.append(batch_df)
+            except Exception as e:
+                logger.warning("腾讯行业排名批次失败 (%d-%d): %s", i, i + batch_size, e)
+                continue
+
+        if not all_quotes:
+            logger.warning("腾讯行业排名: 所有批次均失败")
+            return pd.DataFrame()
+
+        quotes = pd.concat(all_quotes, ignore_index=True)
+        if quotes.empty:
+            return pd.DataFrame()
+
+        logger.info("腾讯行业排名: 获取到 %d 只股票实时行情", len(quotes))
+
+        # 按行业聚合
+        records = []
+        for sector, symbols in industry_map.items():
+            stocks = quotes[quotes["symbol"].isin(symbols)]
+            if stocks.empty:
+                continue
+            valid = stocks[stocks["change_pct"].notna()]
+            if valid.empty:
+                continue
+            records.append({
+                "sector_name": sector,
+                "stock_count": len(valid),
+                "avg_change_pct": round(valid["change_pct"].mean(), 2),
+                "total_amount": round(valid["amount"].sum() if "amount" in valid.columns else 0, 0),
+                "up_count": int((valid["change_pct"] > 0).sum()),
+                "down_count": int((valid["change_pct"] < 0).sum()),
+            })
+
+        if not records:
+            return pd.DataFrame()
+
+        result = pd.DataFrame(records)
+        result = result.sort_values("avg_change_pct", ascending=False).reset_index(drop=True)
+        logger.info("腾讯行业排名: %d 个行业有数据", len(result))
+        return result
+
     # ==================== 分时数据 ====================
 
     def _fetch_intraday(self, symbol: str) -> dict:

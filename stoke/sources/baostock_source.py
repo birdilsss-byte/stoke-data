@@ -355,6 +355,38 @@ class BaostockSource:
         logger.info("Baostock 行业分类: %d 条", len(df))
         return df
 
+    # ---------- 行业分类树（用于自建行业排名） ----------
+
+    @retry_on_failure()
+    def get_industry_tree(self) -> dict:
+        """
+        获取行业分类树：{行业名称: [股票代码列表]}
+
+        基于 baostock 的 query_stock_industry()，将全市场股票按证监会行业分类分组。
+        可直接传入 tencent_direct.get_sector_rank() 用于自建行业涨跌排名。
+
+        Returns:
+            dict: {industry_name: [stock_code_list]}
+        """
+        df = self.get_stock_industry()
+        if df.empty:
+            return {}
+
+        tree = {}
+        for _, row in df.iterrows():
+            industry = str(row.get("industry", "")).strip()
+            code = str(row.get("code", "")).strip()
+            if not industry or not code:
+                continue
+            # baostock 返回格式 'sh.600000'，转为纯代码 '600000'
+            if "." in code:
+                code = code.split(".")[1]
+            tree.setdefault(industry, []).append(code)
+
+        logger.info("行业分类树: %d 个行业, %d 只股票",
+                     len(tree), sum(len(v) for v in tree.values()))
+        return tree
+
     # ---------- 股票列表 ----------
 
     @retry_on_failure()

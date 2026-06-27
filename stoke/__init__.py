@@ -3,7 +3,7 @@ Stoke Data — A股量化投研数据层（精简版）
 
 纯粹的数据获取层，无策略/时机/执行逻辑，可被其他模块或智能体复用。
 
-10 大源，各司其职，零 API Key：
+12 大源，各司其职，零 API Key：
   mootdx (TCP)          — K线/实时行情/指数/板块，不限速
   akshare (HTTP)        — 新闻/研报/涨停/情绪/资金流/行业，5s限流
   baostock (HTTP)       — 复权K线/行业分类/财报/估值字段，1s限流
@@ -14,6 +14,8 @@ Stoke Data — A股量化投研数据层（精简版）
   ths (HTTP)            — 同花顺一致预期EPS，1s限流
   datacenter (HTTP)     — 东财数据中心龙虎榜，1.5s限流
   cninfo (HTTP)         — 巨潮公告全文，1s限流
+  push2 (HTTP)          — 东财 push2 直连行业/概念排名，零鉴权，akshare 降级备用
+  ths_hot (HTTP)        — 同花顺热点直连强势股涨停/北向资金，零鉴权，akshare 降级备用
 
 用法::
     from stoke import Stoke  # 默认带缓存

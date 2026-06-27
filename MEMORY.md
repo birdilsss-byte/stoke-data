@@ -1,0 +1,1 @@
+- [4-Agent 测试修复 20260627](4-agent-review-fixes-20260627.md) — calendar.py 冲突/CLS 超时/pyproject 修复 + 新方法吸收

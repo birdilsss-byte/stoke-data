@@ -19,7 +19,7 @@ from typing import Callable, Optional
 
 import pandas as pd
 
-from stoke.calendar import today_str
+from stoke.trading_calendar import today_str
 
 logger = logging.getLogger(__name__)
 
@@ -484,8 +484,6 @@ class Store:
         self._update_meta(table, now)
         logger.info("缓存写入: %s/%s (%d 行)", table, key, len(df))
         return df
-
-    # ==================== 统计 ====================
 
     # ==================== 统计 ====================
 

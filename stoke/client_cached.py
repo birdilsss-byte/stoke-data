@@ -14,7 +14,7 @@ import pandas as pd
 from stoke.config import setup_logging
 from stoke.client import Stoke as StokeRaw
 from stoke.store import Store, TTL as STORE_TTL
-from stoke.calendar import today_str
+from stoke.trading_calendar import today_str
 
 setup_logging()
 logger = logging.getLogger(__name__)

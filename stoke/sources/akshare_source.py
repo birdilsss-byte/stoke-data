@@ -23,7 +23,7 @@ import pandas as pd
 from stoke.config import RateLimiter
 from stoke.config import RATE_LIMIT
 from stoke.utils import retry_on_failure
-from stoke.calendar import today_str as cal_today_str
+from stoke.trading_calendar import today_str as cal_today_str
 
 logger = logging.getLogger(__name__)
 
@@ -70,14 +70,21 @@ class AKShareSource:
     @retry_on_failure()
     def get_cls_telegraph(self) -> pd.DataFrame:
         """
-        获取财联社电报快讯（分钟级更新）
+        获取财联社电报快讯（分钟级更新，30 秒超时保护）
 
         Returns:
             DataFrame，含 标题、内容、发布时间 等列
         """
         self.limiter.wait()
         logger.info("获取财联社电报")
-        return ak.stock_info_global_cls()
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            f = ex.submit(ak.stock_info_global_cls)
+            try:
+                return f.result(timeout=30)
+            except FutureTimeout:
+                logger.error("财联社电报超时（30秒），返回空")
+                return pd.DataFrame()
 
     # ==================== 研报层 ====================
 

@@ -22,7 +22,7 @@ from collections import defaultdict
 logging.basicConfig(level=logging.WARNING)
 from stoke import Stoke
 from stoke.config import setup_logging
-from stoke.calendar import today_str
+from stoke.trading_calendar import today_str
 setup_logging("WARNING")
 logging.getLogger("stoke.utils").setLevel(logging.ERROR)
 logging.getLogger("stoke.store").setLevel(logging.ERROR)

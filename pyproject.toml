@@ -17,5 +17,5 @@ dependencies = [
 include = ["stoke*"]
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "pandas"]
 build-backend = "setuptools.build_meta"

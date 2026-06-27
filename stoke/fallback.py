@@ -21,7 +21,8 @@ from stoke import DataEmptyError
 
 logger = logging.getLogger(__name__)
 
-# akshare 独占、无备份的方法 — 不可用时优雅降级
+# FallbackStoke 透传保护层：这些方法在 Stoke 层已有 fallback（如 akshare→push2），
+# FallbackStoke 透传时额外兜底，任意异常 → 空 DataFrame + warning
 _AKSHARE_ONLY = {
     "limit_up", "strong_stocks", "limit_down",
     "sector_rank", "market_breadth", "market_volume",
@@ -92,6 +93,10 @@ class FallbackStoke:
         self._s = stoke or StokeCached()
         self._raw = self._s.raw
         logger.info("FallbackStoke 初始化完成（7 个方法带多级备份）")
+
+    def probe(self) -> dict:
+        """检查所有数据源连通性，返回 {源名: True/False}"""
+        return self._s.health_check()
 
     def _fallback_call(self, name: str, fns: list) -> pd.DataFrame:
         """按优先级尝试多个数据源，全部失败时抛出 DataEmptyError"""
