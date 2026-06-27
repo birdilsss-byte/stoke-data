@@ -29,3 +29,5 @@ review/
 # Generated / binary artifacts
 exported_image.png
 *.zip
+tests/*.html
+tests/*.json
