@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/birdilsss-byte/stoke-data"><img src="https://img.shields.io/badge/Python-3.11+-blue.svg" alt="Python"></a>
   <a href="https://github.com/birdilsss-byte/stoke-data/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="https://github.com/birdilsss-byte/stoke-data/releases"><img src="https://img.shields.io/badge/version-2.1.0-brightgreen.svg" alt="Version"></a>
+  <a href="https://github.com/birdilsss-byte/stoke-data/releases"><img src="https://img.shields.io/badge/version-2.1.2-brightgreen.svg" alt="Version"></a>
   <img src="https://img.shields.io/badge/API%20Key-不需要-orange.svg" alt="No API Key">
 </p>
 
@@ -34,7 +34,7 @@ uv run python3 -c "
 from stoke import Stoke
 s = Stoke()
 df = s.realtime(['000001', '600519'])
-print(df[['code', 'price', 'high', 'low']].to_string())
+print(df[['symbol', 'price', 'high', 'low']].to_string())
 "
 ```
 
@@ -96,7 +96,7 @@ df = fs.kline("000001")  # mootdx → efinance → baostock → 腾讯
 
 | 特性 | 说明 |
 |------|------|
-| **全局限流** | 多 Agent 同时调用同一源，自动协调间隔，不封 IP |
+| **全局限流** | 同进程内跨实例共享限流状态，多 Agent 建议错峰调度 |
 | **列名归一化** | 同方法不管走主源/备用源，返回一致列名 |
 | **降级透明** | `df.attrs` 标记 method + fallback 信息，调用方可感知 |
 | **SQLite 缓存** | 分级 TTL，缓存命中 <10ms，故障自动回退旧缓存 |

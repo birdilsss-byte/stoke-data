@@ -131,7 +131,7 @@ class StokeCached:
         real_date = today_str()
         return self._cached_call(
             "market_breadth", real_date,
-            lambda: self._s.akshare.get_market_breadth(),
+            lambda: self._s.market_breadth(),
             lambda: self._s.akshare.get_market_breadth(),
             max_age_sec=STORE_TTL["market_breadth"], mode="replace", key_column="date",
         )
@@ -139,7 +139,7 @@ class StokeCached:
     def market_volume(self) -> pd.DataFrame:
         return self._cached_call(
             "market_volume", today_str(),
-            lambda: self._s.akshare.get_market_volume(),
+            lambda: self._s.market_volume(),
             lambda: self._s.akshare.get_market_volume(),
             max_age_sec=STORE_TTL["market_volume"], mode="append", key_column="date",
             column_map={"日期": "date", "上证-收盘价": "sh_close", "上证-涨跌幅": "sh_change",

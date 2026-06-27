@@ -36,5 +36,5 @@ class SourceNotReadyError(StokeError): pass
 from stoke.client_cached import StokeCached as Stoke
 from stoke.fallback import FallbackStoke
 
-__version__ = "2.1.0"
+__version__ = "2.1.2"
 __all__ = ["Stoke", "FallbackStoke", "StokeError", "NetworkError", "DataEmptyError", "SourceNotReadyError"]

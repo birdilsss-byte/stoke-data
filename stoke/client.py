@@ -21,7 +21,7 @@ from stoke.sources.datacenter_source import DatacenterSource
 from stoke.sources.cninfo_source import CninfoSource
 from stoke.sources.push2_source import EastmoneyPush2Source
 from stoke.sources.ths_hot_source import THSHotSource
-from stoke import NetworkError, DataEmptyError, SourceNotReadyError
+from stoke import NetworkError, SourceNotReadyError
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +125,9 @@ class Stoke:
         """统一错误包装：数据源异常 → Stoke 异常，上层可分类处理"""
         try:
             result = fn(*args, **kwargs)
+            if result is None:
+                logger.warning("%s 返回 None，转为空 DataFrame", method_name)
+                return pd.DataFrame()
             if isinstance(result, pd.DataFrame) and result.empty:
                 logger.warning("%s 返回空 DataFrame", method_name)
             return result
@@ -168,7 +171,7 @@ class Stoke:
 
     def realtime(self, symbols: List[str]) -> pd.DataFrame:
         """实时行情（含 5 档盘口）"""
-        return self._safe_call("realtime", self.mootdx.get_realtime, symbols)
+        return self._normalize(self._safe_call("realtime", self.mootdx.get_realtime, symbols), "realtime")
 
     def kline(
         self,
@@ -218,17 +221,21 @@ class Stoke:
         "northbound_flow": {"日期": "date", "当日成交净买额": "net_buy",
                             "买入成交额": "buy_amount", "卖出成交额": "sell_amount"},
         "hot_keywords": {"概念名称": "concept_name", "股票代码": "symbol", "热度": "heat"},
+        "realtime": {"code": "symbol"},
     }
 
     def _normalize(self, df: pd.DataFrame, method: str) -> pd.DataFrame:
         """统一列名 + 标记数据来源，消费者可读 df.attrs 自行判断"""
-        if df is None or df.empty:
-            return df
+        if df is None:
+            return pd.DataFrame()
+        if isinstance(df, pd.DataFrame):
+            df.attrs["method"] = method
+        if df.empty or not isinstance(df, pd.DataFrame):
+            return df if isinstance(df, pd.DataFrame) else pd.DataFrame()
         mapping = self._NORM.get(method, {})
         rename = {k: v for k, v in mapping.items() if k in df.columns}
         if rename:
             df = df.rename(columns=rename)
-        df.attrs["method"] = method
         return df
 
     def _call_fallback(self, method: str, primary, backup) -> pd.DataFrame:
@@ -240,8 +247,9 @@ class Stoke:
             fb = True
             df = self._safe_call(f"{method}.fb", backup)
         df = self._normalize(df, method)
-        if not df.empty:
-            df.attrs["fallback"] = fb
+        df.attrs["fallback"] = fb
+        if df.empty and fb:
+            logger.warning("%s: 主备源均不可用，返回空数据", method)
         return df
 
     def limit_up(self, date: Optional[str] = None) -> pd.DataFrame:
@@ -274,11 +282,11 @@ class Stoke:
 
     def concepts(self) -> pd.DataFrame:
         """概念板块列表"""
-        return self._safe_call("concepts", self.akshare.get_concept_list)
+        return self._call_fallback("concepts", lambda: self.akshare.get_concept_list(), lambda: pd.DataFrame())
 
     def industries(self) -> pd.DataFrame:
         """行业板块列表"""
-        return self._safe_call("industries", self.akshare.get_industry_list)
+        return self._call_fallback("industries", lambda: self.akshare.get_industry_list(), lambda: pd.DataFrame())
 
     def sector_members(self, sector_name: str) -> pd.DataFrame:
         """
@@ -314,7 +322,7 @@ class Stoke:
 
     def market_breadth(self) -> pd.DataFrame:
         """市场宽度：上证指数日线"""
-        return self._safe_call("market_breadth", self.akshare.get_market_breadth)
+        return self._call_fallback("market_breadth", lambda: self.akshare.get_market_breadth(), lambda: pd.DataFrame())
 
     def market_volume(self) -> pd.DataFrame:
         """沪深两市每日成交额"""

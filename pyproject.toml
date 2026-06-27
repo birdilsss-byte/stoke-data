@@ -1,6 +1,6 @@
 [project]
 name = "stoke-data"
-version = "2.1.0"
+version = "2.1.2"
 description = "A股量化投研数据层 — 纯数据获取，无策略/时机/执行逻辑，可被任意模块或智能体复用"
 requires-python = ">=3.11"
 dependencies = [

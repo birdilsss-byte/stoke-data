@@ -34,7 +34,7 @@ _GLOBAL_LAST: dict = {}
 
 
 class RateLimiter:
-    """请求频率控制，带随机抖动。跨实例共享状态，多 Agent 不冲突。"""
+    """请求频率控制，带随机抖动。同进程内跨实例共享状态。多 Agent 建议错峰调度。"""
     def __init__(self, interval: float = 5.0, name: str = ""):
         self.interval = interval
         self._key = name

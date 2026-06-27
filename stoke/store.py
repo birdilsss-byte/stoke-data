@@ -89,6 +89,7 @@ class Store:
         """自动建表（幂等，多次执行安全）"""
         with sqlite3.connect(self.db_path) as conn:
             conn.executescript("""
+                PRAGMA journal_mode=WAL;
                 -- 日K线（核心表，追加模式）
                 CREATE TABLE IF NOT EXISTS kline_daily (
                     symbol      TEXT NOT NULL,
@@ -376,12 +377,6 @@ class Store:
                 );
                 CREATE INDEX IF NOT EXISTS idx_ann_symbol
                     ON announcements(symbol);
-
-                -- 元数据表（跟踪每张表的最后写入时间）
-                CREATE TABLE IF NOT EXISTS _meta (
-                    table_name  TEXT PRIMARY KEY,
-                    last_write  TEXT NOT NULL
-                );
             """)
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
@@ -481,14 +476,13 @@ class Store:
         df["fetched_at"] = now
         self._write(table, df, mode, key, key_column)
 
-        self._update_meta(table, now)
         logger.info("缓存写入: %s/%s (%d 行)", table, key, len(df))
         return df
 
     # ==================== 统计 ====================
 
     def stats(self) -> dict:
-        """返回各表行数和最后写入时间"""
+        """返回各表行数"""
         result = {}
         with sqlite3.connect(self.db_path) as conn:
             tables = conn.execute(
@@ -577,6 +571,16 @@ class Store:
             write_cols = [c for c in df.columns if c in table_cols]
             df_write = df[write_cols].copy()
 
+            # 丢弃主键为空的行，避免 NOT NULL 约束导致缓存写入失败
+            pk_cols = self._pk_columns(conn, table)
+            pk_in = [c for c in pk_cols if c in df_write.columns]
+            if pk_in:
+                before = len(df_write)
+                df_write = df_write.dropna(subset=pk_in)
+                if df_write.empty and before > 0:
+                    logger.warning("%s: 丢弃 %d 行(主键NULL)，保留旧缓存", table, before)
+                    return
+
             if mode == "replace":
                 conn.execute(
                     f"DELETE FROM \"{table}\" WHERE \"{key_column}\" = ?", (key,)
@@ -592,14 +596,6 @@ class Store:
                 )
             elif mode == "overwrite":
                 df_write.to_sql(table, conn, if_exists="replace", index=False)
-
-    def _update_meta(self, table_name: str, now: str):
-        """更新元数据表"""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                "INSERT OR REPLACE INTO _meta (table_name, last_write) VALUES (?, ?)",
-                (table_name, now),
-            )
 
     def _pk_columns(self, conn: sqlite3.Connection, table: str) -> list:
         """从 PRAGMA table_info 读取主键列名列表"""

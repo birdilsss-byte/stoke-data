@@ -60,7 +60,7 @@ uv run python3 -c "
 from stoke import Stoke
 s = Stoke()
 df = s.realtime(['000001', '600000', '000858'])
-print(df[['code', 'price', 'high', 'low', 'vol']].to_string())
+print(df[['symbol', 'price', 'high', 'low', 'vol']].to_string())
 "
 ```
 
@@ -103,6 +103,9 @@ df = s.sector_members("沪深300")             # 板块成分股
 print(df.attrs)  # → {"method": "limit_up", "fallback": False}
 # fallback=True 说明主源不可用，走的是备用源
 ```
+ > 注：`s.*` 调用走透明代理（`StokeCached.__getattr__`→裸 `Stoke`），未列出的方法同样可用。
+ > 重要数据推荐 `FallbackStoke`（多级自动备份）：`from stoke import FallbackStoke; fb = FallbackStoke(); fb.kline("000001")`
+ > 💡 **多 Agent 提示**：多个 Agent 同时使用时错开 akshare 调用（间隔 ≥5s），避免同时请求。缓存 SQLite 已启用 WAL 模式，支持并发读写。
 
 ## 降级链速查
 
