@@ -1,8 +1,6 @@
 """
 Baostock 数据源测试：K线(含复权)、行业分类、股票列表、健康检查
 """
-import sys
-sys.path.insert(0, "/Volumes/Black/Stoke")
 import time
 import pandas as pd
 from stoke import Stoke

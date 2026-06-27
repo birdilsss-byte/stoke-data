@@ -2,8 +2,6 @@
 mootdx 边界测试：探索未使用能力，评估分流 akshare 的潜力
 """
 import time
-import sys
-sys.path.insert(0, "/Volumes/Black/Stoke")
 
 from mootdx.quotes import Quotes
 

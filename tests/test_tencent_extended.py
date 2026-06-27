@@ -10,11 +10,7 @@
 """
 
 import time
-import sys
 import pandas as pd
-
-# 确保能找到 stoke 包
-sys.path.insert(0, ".")
 
 from stoke.sources.tencent_direct_source import TencentDirectSource
 from stoke.client import Stoke
