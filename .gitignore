@@ -15,8 +15,17 @@ wheels/
 # IDE
 .vscode/
 .idea/
+.trae/
 
 # Claude
 .claude/
 CLAUDE.md
+MEMORY.md
 .stoke_cache.db
+
+# Internal docs / review
+review/
+
+# Generated / binary artifacts
+exported_image.png
+*.zip
