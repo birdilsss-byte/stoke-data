@@ -247,6 +247,10 @@ class StokeCached:
             key_column="symbol",
         )
 
+    def stats(self) -> dict:
+        """返回缓存统计：{表名: 行数}"""
+        return self.store.stats()
+
     # ===== 透传：其余方法自动代理到裸 Stoke =====
 
     def __getattr__(self, name):

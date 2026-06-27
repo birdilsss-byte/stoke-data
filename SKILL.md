@@ -99,13 +99,27 @@ df = s.concepts()                            # 概念板块列表
 df = s.industries()                          # 行业板块列表
 df = s.sector_members("沪深300")             # 板块成分股
 
-# 检测数据来源（新特性）
+# 检测数据来源
 print(df.attrs)  # → {"method": "limit_up", "fallback": False}
-# fallback=True 说明主源不可用，走的是备用源
+
+# 缓存统计
+print(s.stats())  # → {"kline_daily": 6400, "limit_up": 120, ...}
 ```
  > 注：`s.*` 调用走透明代理（`StokeCached.__getattr__`→裸 `Stoke`），未列出的方法同样可用。
- > 重要数据推荐 `FallbackStoke`（多级自动备份）：`from stoke import FallbackStoke; fb = FallbackStoke(); fb.kline("000001")`
  > 💡 **多 Agent 提示**：多个 Agent 同时使用时错开 akshare 调用（间隔 ≥5s），避免同时请求。缓存 SQLite 已启用 WAL 模式，支持并发读写。
+
+## FallbackStoke（多级自动备份）
+
+核心方法故障时自动切换备用源：
+```python
+from stoke.fallback import FallbackStoke
+fs = FallbackStoke()
+
+df = fs.kline("000001")      # mootdx → efinance → baostock → 腾讯直连
+df = fs.realtime(["000001"]) # mootdx → 腾讯直连 → 新浪直连 → efinance
+df = fs.stock_list()         # mootdx → baostock
+df = fs.dragon_tiger()       # efinance → akshare
+df = fs.index_pe("上证50")   # legulegu → baostock K线估值
 
 ## 降级链速查
 
