@@ -1,0 +1,18 @@
+# Auto detect text files and ensure LF line endings (cross-platform safety)
+* text=auto eol=lf
+
+# Explicitly declare text files
+*.py text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.cfg text eol=lf
+
+# Binary files — do not touch
+*.png binary
+*.jpg binary
+*.db binary
+*.zip binary
